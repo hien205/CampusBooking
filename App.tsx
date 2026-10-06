@@ -1,20 +1,51 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useEffect } from 'react';
+import {
+  DarkTheme,
+  DefaultTheme,
+  NavigationContainer,
+} from '@react-navigation/native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-export default function App() {
+import AppNavigator from './src/navigation/AppNavigator';
+import { useBookingStore } from './src/store/bookingStore';
+import { useAuthStore } from './src/store/authStore';
+import { useThemeStore } from './src/store/themeStore';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+    },
+  },
+});
+
+function AppContent() {
+  const loadBookings = useBookingStore((state) => state.loadBookings);
+  const initializeAuth = useAuthStore((state) => state.initializeAuth);
+
+  const isDark = useThemeStore((state) => state.isDark);
+
+  useEffect(() => {
+    loadBookings();
+
+    const unsubscribe = initializeAuth();
+
+    return unsubscribe;
+  }, [loadBookings, initializeAuth]);
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <NavigationContainer
+      theme={isDark ? DarkTheme : DefaultTheme}
+    >
+      <AppNavigator />
+    </NavigationContainer>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppContent />
+    </QueryClientProvider>
+  );
+}
